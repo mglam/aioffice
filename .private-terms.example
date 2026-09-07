@@ -1,0 +1,12 @@
+# Names that must never reach a commit: your customers, your products, your repos,
+# your agents' ids, the tools your project happens to use.
+#
+# Copy this to `.private-terms`, which is gitignored — the real list must not be
+# published, since it would be exactly the leak the hook exists to prevent.
+#
+# One per line, case-insensitive, matched as a plain substring. `#` comments allowed.
+
+# Acme Industries
+# acme-internal-portal
+# their-biggest-customer
+# especialista-algo

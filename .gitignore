@@ -17,3 +17,6 @@ debugagentesdev/
 
 # tsc -b artifacts
 *.tsbuildinfo
+
+# The real denylist for the pre-commit hook. Never published.
+.private-terms

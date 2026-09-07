@@ -29,6 +29,7 @@
     "doctor": "tsx server/src/doctor.ts",
     "prompt": "tsx server/src/prompt-preview.ts",
     "order": "tsx server/src/sim-order.ts",
-    "protocol": "tsx server/src/show-protocol.ts"
+    "protocol": "tsx server/src/show-protocol.ts",
+    "privacy": "sh .githooks/privacy-scan"
   }
 }

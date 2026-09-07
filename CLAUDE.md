@@ -975,6 +975,44 @@ tools each ended up with.
 
 ---
 
+## Writing examples
+
+**This repo is written while working against a real, private project, and it is published.** Every
+comment, placeholder and documentation example gets written with whatever happens to be on screen —
+which is how a customer's name, a product name, a set of agent ids and one line of a real
+transcript ended up in the docs and survived twenty-seven commits. Cleaning the files was not
+enough: every old version was still in the history, so publishing meant starting a fresh one.
+
+**Use the invented cast.** It is consistent across the docs and the comments, so an example reads
+as an example:
+
+| for | use |
+|---|---|
+| a product | **Northwind** |
+| its repo | `acme-portal-v2` |
+| a person at the table | **Elena Duarte** |
+| a customer company | **Fibra Andina** |
+| an agent id | `cliente-negocio`, `especialista-red`, `programador-back` |
+| a domain to specialise in | hospital scheduling, freight yards, card settlement, grid relays |
+
+Never a real transcript line, a real conversation id, or the name of a tool a particular project
+happens to run.
+
+**A `pre-commit` hook enforces it** (`.githooks/pre-commit`), and `npm run privacy` runs the same
+check over the whole tree. The denylist is `.private-terms`, **gitignored on purpose** — a list of
+private names would be precisely the leak it exists to prevent, so only `.private-terms.example`
+is published. Enable the hook once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The scan checks **untracked files too**, and that is not incidental: the first audit of this repo
+used `git ls-files`, which does not list them, and four new files nearly went out carrying a
+customer's name.
+
+---
+
 ## Verifying changes
 
 **There are no tests, and running the app costs money and quota.** An Opus turn is $0.10–$0.60

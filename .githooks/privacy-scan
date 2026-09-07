@@ -1,0 +1,25 @@
+#!/bin/sh
+# The same denylist, over every tracked file rather than the staged diff. Run it before a push,
+# or after a session that touched the docs.
+#
+# It scans the *tracked* tree. That is deliberate but it has a hole worth knowing: a file you have
+# not added yet is invisible to `git ls-files`, which is exactly how four new files nearly went
+# out with a customer's name in them. So it checks untracked-but-not-ignored files too.
+TERMS=".private-terms"
+[ -f "$TERMS" ] || { echo "privacy: no $TERMS — nothing to check."; exit 0; }
+
+FILES=$( { git ls-files; git ls-files --others --exclude-standard; } | sort -u )
+FOUND=0
+while IFS= read -r term; do
+  case "$term" in ''|\#*) continue ;; esac
+  for f in $FILES; do
+    [ -f "$f" ] || continue
+    if grep -Finq -- "$term" "$f"; then
+      FOUND=1
+      echo "  "$term" → $f"
+    fi
+  done
+done < "$TERMS"
+
+if [ "$FOUND" -eq 1 ]; then echo ""; echo "  Not safe to publish."; exit 1; fi
+echo "  Nothing private in $(printf '%s\n' "$FILES" | wc -l | tr -d ' ') files."

@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Refuses a commit that would publish a private name.
+#
+# This repo is written *while working against a real, private project*, so every comment,
+# placeholder and documentation example is written with whatever happens to be on screen. That is
+# how a customer's name, a product name and a line of a real transcript ended up in the docs and
+# survived twenty-seven commits — cleaning the files was not enough, because every old version was
+# still in the history.
+#
+# The terms themselves live in `.private-terms`, which is **gitignored on purpose**: a denylist of
+# private names would be the leak it exists to prevent. Copy `.private-terms.example` and fill it
+# in. With no such file the hook passes with a warning, so a fresh clone is never blocked.
+#
+# Enable it once per clone:   git config core.hooksPath .githooks
+
+TERMS=".private-terms"
+
+if [ ! -f "$TERMS" ]; then
+  echo "privacy: no $TERMS — not checking. Copy .private-terms.example if you work against a private repo." >&2
+  exit 0
+fi
+
+# Added lines only: removing a private name must never be blocked.
+ADDED=$(git diff --cached -U0 --no-color | grep '^+' | grep -v '^+++')
+[ -z "$ADDED" ] && exit 0
+
+FOUND=0
+while IFS= read -r term; do
+  case "$term" in ''|\#*) continue ;; esac
+  if printf '%s' "$ADDED" | grep -Fiq -- "$term"; then
+    [ "$FOUND" -eq 0 ] && echo "" >&2 && echo "  Commit refused: a private name is in the staged changes." >&2
+    FOUND=1
+    echo "" >&2
+    echo "  "$term" appears in:" >&2
+    git diff --cached --name-only | while IFS= read -r f; do
+      [ -f "$f" ] && grep -Finq -- "$term" "$f" && echo "    $f" >&2
+    done
+  fi
+done < "$TERMS"
+
+if [ "$FOUND" -eq 1 ]; then
+  echo "" >&2
+  echo "  Use the invented cast instead — see "Writing examples" in CLAUDE.md." >&2
+  echo "  To override once (you had better be sure): git commit --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+exit 0

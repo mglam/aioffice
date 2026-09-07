@@ -808,6 +808,23 @@ MIT — see [LICENSE](LICENSE). Use it, modify it and distribute it however you 
 it asks is that the copyright notice be kept. It comes with **no warranty**: it runs against your
 Claude subscription and writes to your disk, so check what you point it at.
 
+## If you work against a private repo
+
+The app is pointed at *your* project, so anything you write while using it — a comment, a
+placeholder, an example in these docs — tends to arrive with whatever was on screen. If this
+checkout is one you also publish from, enable the guard once:
+
+```bash
+git config core.hooksPath .githooks
+cp .private-terms.example .private-terms   # then list your own names in it
+```
+
+`pre-commit` refuses a commit that adds one of those names, and `npm run privacy` checks the whole
+tree, untracked files included. `.private-terms` is gitignored — a list of private names is
+exactly the thing not to publish.
+
+---
+
 ## Contributing
 
 There are no tests: verifying a change costs money and quota. If you send a PR, run the free
