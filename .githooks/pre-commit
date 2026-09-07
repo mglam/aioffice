@@ -16,6 +16,15 @@
 
 TERMS=".private-terms"
 
+# Branches that exist to hold the private version, for an internal remote. One clone can serve
+# both a public and an internal repo, and blocking every commit on the internal branch would make
+# the guard something you switch off rather than something you keep.
+case "$(git symbolic-ref --short HEAD 2>/dev/null)" in
+  internal|internal/*|private-history)
+    echo "privacy: on an internal branch — not checking." >&2
+    exit 0 ;;
+esac
+
 if [ ! -f "$TERMS" ]; then
   echo "privacy: no $TERMS — not checking. Copy .private-terms.example if you work against a private repo." >&2
   exit 0

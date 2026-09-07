@@ -1007,6 +1007,11 @@ is published. Enable the hook once per clone:
 git config core.hooksPath .githooks
 ```
 
+The hook **skips on `internal` and `private-history`**. Those branches exist to hold the version
+with the real names, for an internal remote; blocking every commit on them would turn the guard
+into something you switch off rather than something you keep. `npm run privacy` still checks
+whatever is in front of it, on any branch.
+
 The scan checks **untracked files too**, and that is not incidental: the first audit of this repo
 used `git ls-files`, which does not list them, and four new files nearly went out carrying a
 customer's name.
