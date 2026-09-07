@@ -10,8 +10,8 @@ And each argues from where they sit: the architect and the customer's engineer o
 and draw opposite conclusions.
 
 **You type the question and press Play.** One of them chairs, the rest answer each other, and it
-runs until the question is actually answered — not for a fixed number of rounds. Then it writes the
-documents it was convened to produce. You can redirect them, reseat, or stop at any point; the
+runs until the question is actually answered — not for a fixed number of rounds. Then it writes
+the documents it was convened to produce. You can redirect them, reseat, or stop at any point; the
 normal case is one Play and a read.
 
 Local, no database, no API key — it runs on your own Claude Code, against your own subscription.
@@ -92,8 +92,8 @@ The **people** icon in the masthead. Three groups, and the difference is who may
 - **For one project** — whoever means nothing in the abstract: its product manager, the customers
   who would buy it, its architect. Its repository is read while writing them, so the specifics are
   real.
-- **Inherited from your repo** — the `.md` files already in `<project>/.claude/agents/`. Yours; the
-  app reads them, seats them, and never edits them. If one is titled by role rather than named,
+- **Inherited from your repo** — the `.md` files already in `<project>/.claude/agents/`. Yours;
+  the app reads them, seats them, and never edits them. If one is titled by role rather than named,
   **Name them** invents a name and keeps it in the app's own data.
 
 **+ New person** asks for a role and the knobs that role varies on — how a salesperson sells,
@@ -114,8 +114,8 @@ Type the question, pick a mode, press Play.
 | **Answer a question** | the same engine, with what you typed as the standing question — re-injected on every turn, so nobody drifts off it. |
 | **One round, all at once** | a single parallel pass. Nobody sees the others inside the round, so the first speaker cannot anchor the rest. |
 
-**⌘↵** plays; mid-round it redirects them instead, and what you say outranks the standing question.
-**Stop** cuts the turn in flight and keeps what it managed to say.
+**⌘↵** plays; mid-round it redirects them instead, and what you say outranks the standing
+question. **Stop** cuts the turn in flight and keeps what it managed to say.
 
 Three phases — open, cross, close — and it ends on *state*: nothing unanswered, no blocker
 standing, everyone has taken a position. The round count is a cap, not a plan. If it runs out
@@ -128,8 +128,8 @@ agreements and blockers per turn.
 
 Each seat has one control — a ring you click up: *not taking part → short, concrete answers →
 a full answer → works it through in detail*. It sets how much the model reasons before answering,
-and asks for a length. The first level also puts that seat on sonnet, which is the right answer for a salesperson saying whether something is sellable,
-and a fraction of the cost.
+and asks for a length. The first level also puts that seat on sonnet — the right answer for a
+salesperson saying whether a thing is sellable, and a fraction of the cost.
 
 **Copy** opens the same setup again with an empty transcript; **Restart** empties this one.
 Both keep the people, the question and the deliverables.
@@ -152,9 +152,9 @@ from a product manager, the proposal from a salesperson, the plan from Claude Co
 ## What the agents can do
 
 **Read, and nothing else.** Each gets the intersection of what its own file declares and a
-read-only list — `Read`, `Grep`, `Glob`, `WebSearch`, `WebFetch`, and `Bash` limited to inspection.
-`Edit` and `Write` do not exist in their context; documents are written by the backend from the
-markdown they return.
+read-only list — `Read`, `Grep`, `Glob`, `WebSearch`, `WebFetch`, and `Bash` limited to
+inspection. `Edit` and `Write` do not exist in their context; documents are written by the
+backend from the markdown they return.
 
 Outside your repository they can read **one** directory, holding one file: the project's
 `shared/history.md`, a regenerated summary of every conversation held about it. The raw
@@ -169,8 +169,8 @@ it.
 ## Costs
 
 An Opus turn runs roughly $0.10–$0.60 equivalent; a converging session of four rounds plus the
-documents can pass $6 and 20 minutes. **The cheapest lever is each seat's level** — reserve *a
-fondo* for the seats the question actually turns on. One-offs are small: a project's frame
+documents can pass $6 and 20 minutes. **The cheapest lever is each seat's level** — reserve the
+top one for the seats the question actually turns on. One-offs are small: a project's frame
 $0.05–$0.15, a profile about $0.20, naming a repo's unnamed profiles about $0.02 for all of them.
 
 It all goes against your Claude subscription, not an API bill. The figure behind each speaker's
