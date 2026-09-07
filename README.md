@@ -1,10 +1,27 @@
 # The AI Office
 
-A local web app for moderating discussions between several Claude Code agents.
+A local web app that sits several Claude Code agents around one question and lets them argue it
+out until they answer it.
 
-Each participant is an independent Agent SDK session, with its own persona and its own memory.
-You moderate: you hand out the turns, redirect, or let them work on their own until they answer
-the question. When the roundtable closes, it writes the documents it was convened to produce.
+**You type the question and press Play. Then it runs itself.** One of the agents chairs: it asks,
+someone answers, and the turn comes back to the chair — or, with no chair, they hand the floor to
+each other, and whoever was just asked something speaks next. They are not answering *you*, they
+are answering each other, and you can watch them do it.
+
+Each one is a different **profile** — a product manager, an architect, a domain specialist, the
+customer who would have to buy it, the engineer who would have to run it — and each is an
+independent Agent SDK session with its own instructions and its own memory. **All of them can read
+your repository**, with the same tools you would use: `Read`, `Grep`, `Glob`, a web search. So they
+argue from what is actually in the code, not from a summary of it — and each from where they sit,
+which is the point. The architect and the customer's engineer look at the same file and disagree
+about it.
+
+It stops on **state, not on a counter**: when nothing is left unanswered, no blocker is standing
+and everyone has taken a position. Then it writes the documents it was convened to produce and
+stages them for you to read. Nothing reaches your repository until you publish it.
+
+You can step in at any point — redirect them, take someone out, put someone else in, or stop it —
+but you do not have to. The normal case is one Play.
 
 **Two levels:**
 
@@ -61,8 +78,8 @@ Two languages, set independently, because they answer different questions.
   pack per language.
 
 A new project's agent language is **read off the repo**, not assumed: the setup flow looks at the
-personas in `.claude/agents/` if there are any, and at the README and CLAUDE.md otherwise. When
-those disagree the personas win, since theirs is the language that has to match. It is per project
+profiles in `.claude/agents/` if there are any, and at the README and CLAUDE.md otherwise. When
+those disagree the profiles win, since theirs is the language that has to match. It is per project
 and editable.
 
 **A project's `locale` is the language its agents answer in**, and every turn says so outright
@@ -70,7 +87,7 @@ rather than leaving it to be inferred from the language the protocol happens to 
 
 That is why **the app's own people are written in English** and there is no language to choose when
 you add one: a single language in the pool is what lets the same specialist sit at a Spanish
-project and an English one. A persona you wrote by hand in your repo can be in whatever language
+project and an English one. A profile you wrote by hand in your repo can be in whatever language
 you like — the same instruction makes it answer in the project's.
 
 You can run a Spanish roundtable from an English interface and the other way around. To add a
@@ -86,7 +103,7 @@ the same frontmatter, the same tolerant parser — so adding one is adding a fil
 
 There are three: `frame-writer.md`, which reads a repo and drafts its product frame;
 `agent-writer.md`, which writes a person you can seat; and `namer.md`, which invents a name for a
-persona whose own file gives none. If you don't like how one of them works, edit that file. No
+profile whose own file gives none. If you don't like how one of them works, edit that file. No
 TypeScript involved, and nothing to rebuild.
 
 Alongside them, `.claude/archetypes/` holds the eight roles — product manager, sales, the
@@ -240,15 +257,15 @@ central entity by the wrong name is not credible.
 
 For a role that judges it **from outside**, that is where it stops: the field, the technologies,
 the kind of organisation that buys this — and nothing about the product itself, however much was
-read. A customer who recites a feature list is not a customer, and a persona assembled out of a
+read. A customer who recites a feature list is not a customer, and a profile assembled out of a
 product's own model could only ever ratify that model, which is exactly the independence you seated
 it for.
 
 Those two are separate from the scope: a salesperson is usually global but works *inside*, and a
 customer is usually project-scoped but judges from *outside*.
 
-And no persona ever holds a feature list, an internal identifier or a metric value. Those age
-within a month, and a persona is re-sent on every single turn — so what gets written is how someone
+And no profile ever holds a feature list, an internal identifier or a metric value. Those age
+within a month, and a profile is re-sent on every single turn — so what gets written is how someone
 forms a judgement and where they look, not a catalogue of what they already believe.
 
 **A role can be filled as many times as you like.** Three specialists tuned differently is a
@@ -266,7 +283,7 @@ was always the topic's business. What survives of the convenience is the default
 conversation arrives with the seats from the last one, which is nearly always who you want again.
 
 **Who you can seat.** Everyone in the app's own pool of people, plus any agents the repo has in its
-own `.claude/agents/`, plus **`claude-code`**: Claude Code with no persona, with the project's
+own `.claude/agents/`, plus **`claude-code`**: Claude Code with no profile of its own, with the project's
 `CLAUDE.md` loaded. That one is the programmer-analyst.
 
 **Each seat is one button**, in the *Participants* section, and it cycles up a scale:
@@ -303,7 +320,7 @@ Under it: the level sets how much the model reasons before answering, which is a
 and asks for a length — about 500 characters, about 2000, or as long as it takes. **The length is
 asked for, not enforced**: the Agent SDK exposes no token cap, so treat it as a budget the model
 respects rather than a hard limit. *Rápida* also pins the model to sonnet; above that, whatever
-the persona's own file declares.
+the profile's own file declares.
 
 It belongs to the seat, not to the person, so the same specialist can be brief in one
 conversation and thorough in the next.
@@ -524,7 +541,7 @@ agreed.
 
 ### When they don't know, they say so
 
-Participants have rich personas — a salesperson with their book, a customer with their plant — and
+The profiles are rich — a salesperson with their book, a customer with their plant — and
 that makes them useful, but it also tempts them to answer anything from within the fiction. If you
 ask the salesperson how many deals are pending, that fact exists nowhere.
 
@@ -724,7 +741,7 @@ server/src/
   orchestrator.ts   turns, rounds, session, stopping, artifacts
   store.ts          conversations, derived board, deletion, migrations
   personas.ts       the pool of people, and writing one
-  names.ts          names for a repo's personas that have none
+  names.ts          names for a repo's own profiles that have none
   history.ts        the project history the agents can read
   artifacts.ts      synthesis → local draft, and publishing to AISPECS/
   bus.ts            SSE events and the per-conversation lock
@@ -735,7 +752,7 @@ web/src/            React: transcript, turn rail, moderator bar, document viewer
 data/personas/*.md            the people the app wrote — one file each, `project:` scopes one
 data/projects/<projectId>/
   shared/history.md           every conversation and where it landed — the ONE folder agents read
-  names.json                  names invented for the repo's own personas
+  names.json                  names invented for the repo's own profiles
   conv/<convId>.json          one topic: who sits, the transcript, the sessions
   artifacts/<convId>/*.md     drafts, before publishing
 ```
@@ -773,20 +790,20 @@ afterwards:
   apart), and the history is rebuilt to cover the whole project. The original is renamed to
   `data/roundtables.migrated`.
 
-- `ai-office-*.md` inside a project's `.claude/agents/` — personas the app used to write into the
+- `ai-office-*.md` inside a project's `.claude/agents/` — profiles the app used to write into the
   repo, from back when they were per project. They move into `data/personas/` and the originals are
   deleted: leaving them would seat the same person twice, once from each source. Nothing else in
   that directory is touched.
 
 Projects already in `config.json` when the `locale` field arrived are stamped `es`, because they
-predate the English protocol and their personas are Spanish. New projects default to `en`.
+predate the English protocol and their profiles are Spanish. New projects default to `en`.
 
 ---
 
 ## Costs
 
 An Opus turn with these agents runs roughly $0.10 to $0.60 equivalent, depending on the length of
-the persona and whether the `CLAUDE.md` is loaded. One round of 4 participants is ~2 minutes and
+the profile and whether the `CLAUDE.md` is loaded. One round of 4 participants is ~2 minutes and
 ~$1.50; a converging session of 4 rounds plus the documents can pass $6 and 20 minutes.
 
 **The cheapest lever is each seat's own level.** *Rápida* puts that participant on sonnet with low
@@ -795,7 +812,7 @@ reasoning effort — for a salesperson saying whether something is sellable, tha
 turns on.
 
 The one-offs are small: drafting a project's frame is $0.05–$0.15 on sonnet, writing a person about
-$0.20, naming a repo's unnamed personas about $0.02 for all of them at once.
+$0.20, naming a repo's unnamed profiles about $0.02 for all of them at once.
 
 All of that goes against your subscription, not against the API. The per-turn number is behind each
 speaker's name and the running total per participant is in the right column.
