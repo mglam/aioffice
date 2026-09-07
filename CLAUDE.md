@@ -357,6 +357,17 @@ project's.
 The knobs, the `role:` and the option values stay English too, but those are identifiers rather
 than prose: they are what the writer prompt consumes and what `tuning-*` stores.
 
+**The wire format, in one place, because it only lived in the README.** A turn ends with a fenced
+block the parser reads and the reader never sees as text:
+
+| English, fence ```` ```roundtable ```` | Spanish, fence ```` ```mesa ```` | what it does |
+|---|---|---|
+| `FOR @x: …`  | `PARA @x: …`  | hands x the turn; until answered, nothing converges |
+| `AGREE: …`   | `ACUERDO: …`  | onto the board, with an instruction not to revisit it |
+| `BLOCKER: …` | `BLOQUEO: …`  | while one stands, the conversation has not closed |
+| `LIFT: …`    | `LEVANTO: …`  | withdraws one of your own blockers |
+| `CLOSE`      | `CIERRO`      | you have nothing more |
+
 **The marker parser accepts both keyword sets, always** (`markers.ts`). Not just for the locale in
 force: transcripts written before the English protocol have to keep parsing, and an agent whose
 persona is in one language sometimes answers in the other. The `Markers` type field names are
