@@ -1,0 +1,1059 @@
+/* ── The roundtable — a console for handing out the floor ───────────────────
+   Three typographic roles: grotesk = interface, serif = speech, mono = machine.
+   Colour identifies whoever is speaking; the moderator has no colour, they speak in ink.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --ground:      #eef1f4;
+  --surface:     #ffffff;
+  --surface-sunk:#e4e8ec;
+  --ink:         #141a20;
+  --ink-2:       #46525e;
+  --ink-3:       #7d8996;
+  --rule:        #d3dae0;
+  --rule-soft:   #e6eaee;
+  --chair:       #b4690e;
+
+  --font-ui:    'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-read:  'Source Serif 4', Georgia, serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --rail-x: 15px;
+  --shadow: 0 1px 2px rgba(20, 26, 32, .05), 0 4px 14px rgba(20, 26, 32, .045);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground:      #10151a;
+    --surface:     #161d24;
+    --surface-sunk:#0c1116;
+    --ink:         #e7edf3;
+    --ink-2:       #a3b1bf;
+    --ink-3:       #6d7c8b;
+    --rule:        #29343d;
+    --rule-soft:   #1e262e;
+    --chair:       #e2a03f;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.28);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--chair); outline-offset: 2px; border-radius: 3px; }
+
+/* ── Structure ──────────────────────────────────────────────────────────── */
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+
+.masthead {
+  display: flex; align-items: baseline; gap: 16px;
+  padding: 12px 20px; background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+.masthead h1 {
+  margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+}
+.masthead .sub { color: var(--ink-3); font-size: 12px; }
+/* Global on purpose: it was scoped per container, and two later uses — the wizard footer and
+   each persona's row in step 4 — silently had no rule at all, so nothing was pushed right.
+   In a non-flex parent it does nothing, so there is no cost to it applying everywhere. */
+.spacer { flex: 1; }
+
+.brand {
+  font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  font-size: 10px; color: var(--ink-3); padding-right: 14px;
+  border-right: 1px solid var(--rule);
+}
+
+.columns {
+  display: grid; grid-template-columns: 224px minmax(0, 1fr) 268px;
+  min-height: 0;
+}
+@media (max-width: 1100px) { .columns { grid-template-columns: 0 1fr 240px; } .rail-left { display: none; } }
+
+.rail-left, .rail-right {
+  background: var(--surface); min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.rail-left  { border-right: 1px solid var(--rule); }
+.rail-right { border-left: 1px solid var(--rule); }
+
+.center { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+
+/* ── Section labels ─────────────────────────────────────────────────────── */
+.eyebrow {
+  font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-3); padding: 16px 16px 8px;
+}
+
+/* ── Roundtables ────────────────────────────────────────────────────────── */
+.room-item {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 9px 16px; cursor: pointer; border-left: 2px solid transparent;
+  color: var(--ink-2);
+}
+.room-item:hover { background: var(--surface-sunk); }
+.room-item[aria-current='true'] {
+  border-left-color: var(--chair); color: var(--ink); background: var(--surface-sunk);
+}
+.room-item .t { font-weight: 500; font-size: 13px; }
+.room-item .m { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+
+/* ── The turn rail ──────────────────────────────────────────────────────
+   One continuous line the discussion runs down. Each turn couples onto it as a
+   node carrying the speaker's colour and its turn number. */
+.transcript { overflow-y: auto; padding: 26px 28px 40px; min-height: 0; }
+.thread { position: relative; max-width: 760px; margin: 0 auto; padding-left: 34px; }
+.thread::before {
+  content: ''; position: absolute; left: var(--rail-x); top: 6px; bottom: 6px;
+  width: 1px; background: var(--rule);
+}
+
+.turn { position: relative; margin-bottom: 26px; }
+.turn::before {
+  content: ''; position: absolute; left: calc(-34px + var(--rail-x) - 4px); top: 7px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--speaker, var(--ink-3));
+  box-shadow: 0 0 0 3.5px var(--ground);
+}
+.turn.chair::before {
+  border-radius: 1px; width: 9px; height: 9px; background: var(--chair);
+}
+.turn.live::before { animation: floor 1.4s ease-in-out infinite; }
+@keyframes floor {
+  0%, 100% { box-shadow: 0 0 0 3.5px var(--ground), 0 0 0 4.5px var(--speaker, var(--chair)); }
+  50%      { box-shadow: 0 0 0 3.5px var(--ground), 0 0 0 9px color-mix(in srgb, var(--speaker, var(--chair)) 18%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .turn.live::before { animation: none; } }
+
+.turn-head {
+  display: flex; align-items: baseline; gap: 9px; margin-bottom: 5px; flex-wrap: wrap;
+}
+.turn-n {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.turn-who { font-weight: 600; font-size: 13px; color: var(--speaker, var(--ink)); }
+.turn-role { font-size: 11.5px; color: var(--ink-3); }
+.turn-meta {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3);
+}
+
+/* ── A turn's mechanics, behind its name ──────────────────────────────────
+   The transcript is questions and answers. Which tools ran, what the turn cost, which phase it
+   was in — and, while it is being written, the half-finished text — are how you audit a turn,
+   not how you read one. So they hang off the name.
+
+   Hover reveals it, a click pins it. Both, because hover alone cannot be *read*: the moment you
+   move towards the panel to scroll a long tool list, a hover-only panel is gone. */
+.who-wrap { position: relative; display: inline-flex; }
+.turn-who.as-btn {
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  font-weight: 600; font-size: 13px; color: var(--speaker, var(--ink));
+  /* The one cue that there is something under it, and it stays out of the way until you look. */
+  border-bottom: 1px dotted color-mix(in srgb, var(--speaker, var(--ink-3)) 45%, transparent);
+}
+.turn-who.as-btn:hover,
+.turn-who.as-btn.pinned { border-bottom-style: solid; }
+
+.turn-detail {
+  display: none; position: absolute; top: calc(100% + 5px); left: 0; z-index: 5;
+  /* Sized for what it actually holds. It was a 15em box built for three lines of cost and phase;
+     the marker block moved in and a turn declares two to seven of those, each a sentence. Wide
+     first — width is what stops them wrapping into a tall column — then a cap on height, because
+     the transcript scrolls and an over-tall panel is clipped by it rather than overflowing.
+     `max-content` keeps a short one small. */
+  width: max-content;
+  min-width: 22em; max-width: min(42em, 60vw);
+  max-height: min(24em, 52vh); overflow-y: auto;
+  flex-direction: column; gap: 6px;
+  padding: 9px 12px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--surface); box-shadow: 0 8px 26px rgba(0, 0, 0, .13);
+}
+/* The transcript scrolls, so it clips: a panel on one of the last turns opens downward into
+   nothing. Those open **upward** instead. `:nth-last-child` counts the end-of-thread sentinel
+   and any live turn, hence the 4 — it errs towards flipping one turn too early, which is
+   harmless, rather than one too late, which loses the panel. */
+.thread > *:nth-last-child(-n+4) .turn-detail {
+  top: auto; bottom: calc(100% + 5px);
+}
+.who-wrap:hover .turn-detail,
+/* `:focus-visible`, not `:focus-within` — the click that *unpins* this leaves the button focused,
+   and `:focus-within` would hold the panel open on a turn the pointer had already left. */
+.who-wrap:has(:focus-visible) .turn-detail,
+.turn-detail.pinned { display: flex; }
+
+.dt-line { font-size: 11px; color: var(--ink-3); }
+.dt-line.mono { font-family: var(--font-mono); }
+.dt-tools { display: flex; flex-direction: column; gap: 3px; }
+/* The text as it arrives: monospaced and small on purpose — it is a progress readout, not
+   something to settle in and read. The finished turn is what you read. */
+.dt-stream {
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: var(--ink-2);
+  white-space: pre-wrap; word-break: break-word;
+}
+
+/* Someone is working. The whole signal, since the text no longer paints into the column. */
+.pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--speaker, var(--chair));
+  animation: pulse 1.1s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; opacity: .8; } }
+
+/* Speech is set in serif: these are paragraphs of argument, not chrome. */
+.speech {
+  font-family: var(--font-read); font-size: 15.5px; line-height: 1.62; color: var(--ink);
+}
+.speech p { margin: 0 0 .7em; }
+.speech p:last-child { margin-bottom: 0; }
+.speech strong { font-weight: 600; }
+.speech code {
+  font-family: var(--font-mono); font-size: .84em;
+  background: var(--surface-sunk); padding: 1px 4px; border-radius: 3px;
+}
+.speech ul, .speech ol { margin: 0 0 .7em; padding-left: 1.3em; }
+.speech li { margin-bottom: .3em; }
+/* Headings at their own level. A deliverable is a document — without a size difference between
+   its sections you cannot see its shape, and these run to thousands of words. Offset by one in
+   the renderer, so the document's `#` lands here. */
+.speech h2 { font-size: 1.12em; font-weight: 600; margin: 1.1em 0 .45em; line-height: 1.3; }
+.speech h3 { font-size: 1em; font-weight: 600; margin: 1em 0 .4em; }
+.speech h4, .speech h5, .speech h6 {
+  font-size: .92em; font-weight: 600; margin: .9em 0 .35em; color: var(--ink-2);
+}
+.speech > h2:first-child, .speech > h3:first-child { margin-top: 0; }
+.speech blockquote {
+  margin: 0 0 .7em; padding-left: .9em; border-left: 2px solid var(--rule);
+  color: var(--ink-2);
+}
+.speech hr { border: 0; border-top: 1px solid var(--rule); margin: 1.2em 0; }
+.speech pre {
+  margin: 0 0 .7em; padding: 9px 11px; border-radius: 5px; overflow-x: auto;
+  background: var(--surface-sunk); font-size: .82em; line-height: 1.5;
+}
+.speech pre code { background: none; padding: 0; font-size: 1em; }
+.speech a { color: var(--chair); }
+
+/* The moderator speaks from the head of the table: no card, no colour, in ink. */
+.turn.chair .speech {
+  font-family: var(--font-ui); font-size: 14px; line-height: 1.55;
+  border-left: 2px solid var(--chair); padding-left: 13px; color: var(--ink-2);
+}
+
+.tool {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3);
+  display: flex; gap: 7px; align-items: baseline;
+}
+.tool::before { content: '⌗'; color: var(--speaker, var(--ink-3)); }
+
+.turn-error {
+  font-family: var(--font-mono); font-size: 11.5px; color: #b3261e;
+  border-left: 2px solid #b3261e; padding-left: 10px; margin-top: 4px;
+}
+@media (prefers-color-scheme: dark) { .turn-error { color: #f2857c; border-color: #f2857c; } }
+
+.empty {
+  max-width: 460px; margin: 14vh auto; text-align: center; color: var(--ink-3);
+}
+.empty h2 { font-family: var(--font-read); font-size: 21px; color: var(--ink-2); font-weight: 400; margin: 0 0 8px; }
+
+/* ── The table (seats) ──────────────────────────────────────────────────── */
+.seat {
+  display: grid; grid-template-columns: auto 1fr auto auto; gap: 9px; align-items: center;
+  padding: 9px 16px; border-bottom: 1px solid var(--rule-soft);
+}
+/* Not taking part is a state, not an exclusion: the empty ring says it, so the row stays legible
+   and stays in its alphabetical place. Fading the whole thing to 42% and shunting it to the
+   bottom read as a mistake rather than as something you chose. */
+.seat.off .seat-name { color: var(--ink-3); }
+/* Who they are, then what they are. The name carries the row — it is what the others call them
+   and what you scan for — so the description drops a weight and two sizes: smaller fits more of
+   it before wrapping, which matters for headings like "qué tiene que hacer un OSS para un ISP
+   T2/T3". Both wrap rather than clip: there is nowhere else in the row for the rest to go. */
+.seat-name { font-size: 12.5px; font-weight: 600; min-width: 0; line-height: 1.3; }
+.seat-desc {
+  display: block; margin-top: 1px;
+  font-weight: 400; font-size: 10px; line-height: 1.35; color: var(--ink-3);
+}
+/* Not a detail: their file is gone, so this seat cannot speak at all. */
+.seat-warn { display: block; font-weight: 400; color: #b3261e; font-size: 10.5px; }
+.seat-cost { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); }
+
+/* ── One control per seat ──────────────────────────────────────────────────
+   A checkbox, two selects and a chair dropdown asked four questions to settle one: how much does
+   this person matter in this conversation. This is that one question — a scale you click up, with
+   `chair` as its top rung, read as a filling ring rather than as words. The words are in the
+   tooltip, where they can be a sentence instead of a cramped label. */
+.seat-level {
+  width: 18px; height: 18px; padding: 0; flex: none;
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 50%; background: none;
+}
+.seat-level:hover:not(:disabled) { border-color: var(--speaker, var(--ink-3)); }
+.seat-level:disabled { cursor: not-allowed; opacity: .5; }
+
+/* The mark grows with the level, in the speaker's own hue, so a glance down the column reads as
+   a profile of the conversation rather than as five different widgets. */
+.lv-mark {
+  border-radius: 50%; background: var(--speaker, var(--ink-3));
+  transition: width .12s, height .12s;
+}
+.lv-off .lv-mark { width: 0; height: 0; }
+.lv-low .lv-mark { width: 5px; height: 5px; }
+.lv-medium .lv-mark { width: 8px; height: 8px; }
+.lv-high .lv-mark { width: 11px; height: 11px; }
+@media (prefers-reduced-motion: reduce) { .lv-mark { transition: none; } }
+
+/* Holding the floor. The ring is already the thing your eye goes to in that column, so it carries
+   the state instead of a «tiene la palabra» badge appearing beside the name — a word in one row
+   of five is read after the movement anyway, and it reflowed the row on arrival. */
+.seat-level.speaking { border-color: var(--speaker); }
+.seat-level.speaking .lv-mark { animation: pulse 1.1s ease-in-out infinite; }
+.seat-level.speaking::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 50%;
+  border: 1px solid var(--speaker); animation: halo 1.6s ease-out infinite;
+}
+.seat-level { position: relative; }
+@keyframes halo {
+  0%   { transform: scale(.85); opacity: .7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+/* Still legible without motion: a solid ring rather than a beating one. */
+@media (prefers-reduced-motion: reduce) {
+  .seat-level.speaking .lv-mark { animation: none; }
+  .seat-level.speaking::after { animation: none; opacity: .5; }
+}
+
+/* Chairing is not a quantity, so it is not on the scale. A star: true of exactly one seat, faint
+   on the others until the row is hovered — which is how you find out you can move it. */
+.seat-star {
+  background: none; border: 0; padding: 0 2px; cursor: pointer; line-height: 1;
+  font-size: 13px; color: var(--rule); transition: color .12s;
+}
+.seat:hover .seat-star { color: var(--ink-3); }
+.seat-star.on, .seat:hover .seat-star.on { color: var(--chair); }
+.seat-star:hover:not(:disabled) { color: var(--chair); }
+.seat-star:disabled { cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .seat-star { transition: none; } }
+
+/* What the ring currently means, in words, while the row is hovered. Spans the row like the
+   floor marker, so it does not squeeze the name — and it is real DOM rather than a `title`,
+   which is what makes it correct on the click *after* the one that changed it. */
+.seat-state {
+  display: none; grid-column: 1 / -1; margin-top: 4px;
+  font-size: 10.5px; color: var(--ink-3); line-height: 1.35;
+}
+.seat-state .mono { font-family: var(--font-mono); }
+/* `:focus-visible`, not `:focus-within`: a button keeps focus after a click, so `:focus-within`
+   left the caption lit on a row the pointer had already left. A mouse click does not match
+   `:focus-visible`, while tabbing to it does — which is exactly the split wanted here. */
+.seat:hover .seat-state,
+.seat:has(:focus-visible) .seat-state { display: block; }
+
+.check { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-3);
+  padding: 6px 16px; }
+.check input { accent-color: var(--chair); }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+  border: 1px solid var(--rule); background: var(--surface); border-radius: 5px;
+  padding: 7px 12px; cursor: pointer; font-size: 12.5px; font-weight: 500;
+  transition: background .12s, border-color .12s;
+}
+.btn:hover:not(:disabled) { background: var(--surface-sunk); border-color: var(--ink-3); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary {
+  background: var(--ink); color: var(--ground); border-color: var(--ink);
+}
+.btn-primary:hover:not(:disabled) { background: var(--ink-2); border-color: var(--ink-2); }
+.btn-ghost { border-color: transparent; background: none; color: var(--ink-2); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface-sunk); }
+.btn-sm { padding: 5px 9px; font-size: 11.5px; }
+
+/* ── The moderator's bar ────────────────────────────────────────────────── */
+.chair-bar {
+  border-top: 1px solid var(--rule); background: var(--surface); padding: 12px 28px 14px;
+}
+.chair-inner { max-width: 794px; margin: 0 auto; }
+.chair-bar textarea {
+  width: 100%; min-height: 62px; resize: vertical; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--ground);
+  font-family: var(--font-ui); font-size: 13.5px; line-height: 1.5;
+}
+.chair-bar textarea::placeholder { color: var(--ink-3); }
+.chair-actions { display: flex; gap: 7px; margin-top: 9px; align-items: center; flex-wrap: wrap; }
+
+.floor-picker { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--rule); background: var(--surface); border-radius: 999px;
+  padding: 4px 11px 4px 8px; font-size: 11.5px; cursor: pointer; display: inline-flex;
+  align-items: center; gap: 6px; transition: border-color .12s, background .12s;
+}
+.chip::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--speaker);
+  opacity: .55; transition: opacity .12s;
+}
+.chip:hover:not(:disabled) { border-color: var(--speaker); }
+.chip:hover:not(:disabled)::before { opacity: 1; }
+.chip[aria-pressed='true'] {
+  border-color: var(--speaker); background: color-mix(in srgb, var(--speaker) 9%, var(--surface));
+}
+.chip[aria-pressed='true']::before { opacity: 1; }
+.chip:disabled { opacity: .4; cursor: not-allowed; }
+
+.hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+
+/* ── Deliverables ─────────────────────────────────────────────────────────
+   Every type is listed with a yes/no. What a conversation is *for* is a decision you revise, and
+   hiding the unchosen ones leaves nothing to revise it with. */
+.deliv {
+  display: flex; align-items: flex-start; gap: 8px; padding: 8px 16px 6px;
+}
+.deliv:hover { background: var(--surface-sunk); }
+.deliv input { margin: 2px 0 0; flex: none; cursor: pointer; }
+.deliv-name {
+  font-size: 12.5px; font-weight: 500; color: var(--ink);
+  text-align: left; background: none; border: 0; padding: 0; font-family: inherit;
+  cursor: pointer; flex: 1;
+}
+/* When there is something to read, the name says so. */
+.deliv-name.as-open:hover { color: var(--chair); text-decoration: underline; }
+.deliv-name small {
+  display: block; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3);
+  font-weight: 400; margin-top: 2px;
+}
+/* Off is legible, not invisible: it is a choice you might reverse. */
+.deliv.off .deliv-name { font-weight: 400; color: var(--ink-3); }
+
+/* ── Dialogs ────────────────────────────────────────────────────────────── */
+dialog {
+  border: 1px solid var(--rule); border-radius: 10px; background: var(--surface);
+  color: var(--ink); padding: 0; width: min(540px, 92vw); box-shadow: var(--shadow);
+  /* Capped and column-flexed so a tall body scrolls inside while the footer stays reachable.
+     Without this a centered dialog taller than the viewport gets clipped top and bottom with
+     no way to reach its buttons. */
+  max-height: 90vh; display: flex; flex-direction: column;
+}
+dialog::backdrop { background: rgba(20, 26, 32, .42); }
+.dialog-body { padding: 20px 22px; overflow-y: auto; flex: 1; min-height: 0; }
+.dialog-body h2 { margin: 0 0 4px; font-size: 16px; }
+.dialog-body .lede { color: var(--ink-3); font-size: 12.5px; margin: 0 0 18px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+.field input, .field textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--ground); font-size: 13.5px; font-family: var(--font-ui);
+}
+.field textarea { min-height: 74px; resize: vertical; line-height: 1.5; }
+.dialog-foot { display: flex; gap: 8px; justify-content: flex-end;
+  padding: 13px 22px; border-top: 1px solid var(--rule); background: var(--ground); }
+.error-note { color: #b3261e; font-size: 12px; margin-top: 8px; }
+
+/* ── Automatic rounds ───────────────────────────────────────────────────── */
+.btn-stop {
+  background: var(--chair); border-color: var(--chair); color: #fff; font-weight: 600;
+}
+.btn-stop:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--chair) 84%, #000);
+  border-color: color-mix(in srgb, var(--chair) 84%, #000);
+}
+
+/* A turn stopped by the moderator is not a failure: mark it, don't alarm. */
+.turn-cut {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+  border-left: 2px solid var(--chair); padding-left: 10px; margin: 6px 0 0;
+}
+
+.field-note {
+  font-size: 11px; color: var(--ink-3); margin: 5px 0 0; line-height: 1.45;
+}
+
+/* ── Declared markers ───────────────────────────────────────────────────
+   The fenced block is not shown as text: it is shown as what it is — the structure the app used
+   to decide who speaks next.
+
+   It lives **behind the name**, with the rest of the mechanics. It was in the column, on the
+   argument that a question put to someone *is* the conversation — and read end to end that was
+   wrong: four boxes of clipped restatement between every two turns is where you lose the thread.
+   What was actually said carries it; this is for auditing how the app read it. */
+.markers { display: flex; flex-direction: column; gap: 4px; }
+/* Inside the panel it is one item among several, and the panel owns the spacing. Tighter than in
+   a column: these are read as a list of what was declared, not as prose. */
+.turn-detail .mk { font-size: 11.5px; line-height: 1.4; padding: 4px 8px; }
+.turn-detail .mk::before { margin-bottom: 0; }
+.turn-detail .markers { gap: 3px; }
+/* The mechanics sit under the markers, so they get a rule to separate them. */
+.turn-detail .dt-line:first-of-type { border-top: 1px solid var(--rule-soft); padding-top: 6px; }
+.turn-detail .markers + .dt-tools { border-top: 1px solid var(--rule-soft); padding-top: 6px; }
+.mk {
+  font-size: 12px; line-height: 1.45; padding: 5px 9px; border-radius: 4px;
+  border-left: 2px solid var(--rule); background: var(--surface-sunk);
+  color: var(--ink-2);
+}
+.mk::before {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .07em;
+  text-transform: uppercase; display: block; margin-bottom: 1px; opacity: .75;
+}
+.mk-para   { border-left-color: var(--speaker); }
+.mk-para::before   { content: 'pregunta a'; color: var(--speaker); }
+.mk-ac     { border-left-color: #0b7a6b; }
+.mk-ac::before     { content: 'acuerdo'; color: #0b7a6b; }
+.mk-bl     { border-left-color: #b3261e; }
+.mk-bl::before     { content: 'bloqueo'; color: #b3261e; }
+.mk-closes {
+  border-left-color: var(--ink-3); font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); background: none;
+}
+@media (prefers-color-scheme: dark) {
+  .mk-ac { border-left-color: #3fbfa8; } .mk-ac::before { color: #3fbfa8; }
+  .mk-bl { border-left-color: #f2857c; } .mk-bl::before { color: #f2857c; }
+}
+
+/* A quiet aside in a column of controls. The board panel it was written for is gone — the
+   markers are on the turns themselves, where they were said. */
+.board-empty { padding: 4px 16px 12px; font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
+.mk-lv { border-left-color: var(--ink-3); }
+.mk-lv::before { content: 'levanta bloqueo'; color: var(--ink-3); }
+
+/* ── The standing question ──────────────────────────────────────────────── */
+.q-show {
+  display: block; width: 100%; text-align: left; background: none; cursor: pointer;
+  border: 0; border-left: 2px solid var(--chair); padding: 4px 16px 12px;
+  font-family: var(--font-read); font-size: 14px; line-height: 1.45; color: var(--ink);
+}
+.q-show:hover { background: var(--surface-sunk); }
+/* ── Collapsible sections in the right column ─────────────────────────────
+   A **bar**, not a heading with an arrow next to it. A caret alone was too quiet to read as "this
+   opens and closes": it is 11px of punctuation against a column that already has chevrons,
+   carets and hues doing other jobs. Filling the row and ruling it off says it is a handle before
+   you have read anything on it.
+
+   The row itself is the eyebrow, so it keeps the column's rhythm; what changes is that it is
+   painted and has edges. */
+.eyebrow:has(.sec-toggle) {
+  align-items: center; padding: 0 16px 0 0; margin: 0;
+  background: var(--surface-sunk);
+  /* A rule on top and nothing else. Margins and a bottom border between bars cannot both be
+     right: whether two bars are adjacent depends on whether the one above is collapsed, and a
+     sibling selector cannot see that — `bar + * + bar` matched only when exactly one node sat
+     between them, which is why collapsing left a white gap under some sections and not others.
+     With no margin and a single top rule, every arrangement stacks the same. */
+  border-top: 1px solid var(--rule);
+}
+/* The content of an open section needs a little air before the next bar. */
+.eyebrow:has(.sec-toggle) ~ *:not(.eyebrow) { margin-bottom: 0; }
+.rail-right > *:last-child { border-bottom: 1px solid var(--rule); }
+
+.sec-toggle {
+  display: flex; align-items: center; gap: 7px; flex: 1;
+  padding: 9px 0 9px 16px; background: none; border: 0; cursor: pointer;
+  font: inherit; color: var(--ink-2); letter-spacing: inherit; text-transform: inherit;
+  text-align: left;
+}
+.sec-toggle:hover { color: var(--ink); }
+/* The whole bar reacts, not just the words: it is all one target. */
+.eyebrow:has(.sec-toggle):hover { background: var(--rule-soft); }
+
+.sec-caret {
+  display: inline-block; font-size: 12px; line-height: 1; color: var(--ink-3);
+  transition: transform .12s;
+}
+.sec-caret.open { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .sec-caret { transition: none; } }
+
+/* A closed section should not look like an open one with nothing in it. */
+.eyebrow:has(.sec-toggle) .sec-toggle[aria-expanded='false'] { color: var(--ink-3); }
+
+/* An add action inside a section, under the list it adds to. Quiet — it is not the reason you
+   came to the column — but full width, so it reads as the end of that list rather than as one
+   more item in it. */
+.add-row {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 7px 16px 10px; background: none; border: 0;
+  font: inherit; font-size: 11px; color: var(--chair);
+}
+.add-row:hover:not(:disabled) { background: var(--surface-sunk); }
+.add-row:disabled { opacity: .45; cursor: not-allowed; }
+/* The context reads as prose, not as the question: same click-to-edit affordance, quieter. */
+.brief-show {
+  border-left-color: var(--rule); font-size: 12.5px; color: var(--ink-2);
+  white-space: pre-wrap;
+}
+.brief-show i { color: var(--ink-3); font-style: normal; }
+.q-edit { padding: 0 16px 14px; }
+.q-edit textarea {
+  width: 100%; min-height: 76px; resize: vertical; padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 6px; background: var(--ground);
+  font-family: var(--font-read); font-size: 13.5px; line-height: 1.45;
+}
+.q-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 7px; }
+
+/* ── Document viewer ────────────────────────────────────────────────────
+   Deliverables are read before anything touches the repo. Publishing is explicit. */
+.doc-overlay {
+  position: fixed; inset: 0; background: rgba(20, 26, 32, .5);
+  display: grid; place-items: center; padding: 4vh 4vw; z-index: 50;
+}
+.doc {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  box-shadow: var(--shadow); width: min(820px, 100%); max-height: 92vh;
+  display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+}
+.doc-head {
+  display: flex; align-items: center; gap: 12px; padding: 13px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+.doc-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.doc-file { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; }
+.doc-where { font-size: 11px; color: var(--ink-3); }
+.doc-head .btn { margin-left: auto; }
+
+.doc-body { overflow-y: auto; padding: 24px 30px 30px; }
+.doc-body .speech { font-size: 15px; }
+.doc-loading { color: var(--ink-3); font-size: 12.5px; }
+
+.doc-foot {
+  display: flex; align-items: center; gap: 8px; padding: 12px 20px;
+  border-top: 1px solid var(--rule); background: var(--ground);
+}
+.btn-danger { color: #b3261e; border-color: var(--rule); }
+.btn-danger:hover:not(:disabled) { background: #fdeceb; border-color: #b3261e; }
+@media (prefers-color-scheme: dark) {
+  .btn-danger { color: #f2857c; }
+  .btn-danger:hover:not(:disabled) { background: #3a1d1a; border-color: #f2857c; }
+}
+
+/* the deliverables list is clickable */
+/* A document that exists, and opening it is the point of the row.
+   It used to read as metadata under the checkbox — 10px grey mono — so the thing you reached for
+   to open it was the deliverable's own label, which is a `<label>`: it unticked the deliverable
+   instead. Now it looks like what it is, and it is indented under the deliverable it came from. */
+.artifact-file {
+  display: flex; align-items: center; gap: 7px; width: 100%; text-align: left;
+  background: none; border: 0; border-bottom: 1px solid var(--rule-soft);
+  padding: 7px 16px 7px 40px; cursor: pointer; position: relative;
+}
+.artifact-file::before {
+  content: '📄'; position: absolute; left: 18px; font-size: 11px; opacity: .8;
+}
+.artifact-file:hover { background: var(--surface-sunk); }
+.artifact-file:hover .af-name { color: var(--chair); text-decoration: underline; }
+.af-name { font-size: 11.5px; color: var(--ink-2); }
+.af-state {
+  margin-left: auto; font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--chair);
+}
+.af-state.pub { color: var(--ink-3); }
+
+
+/* Chip with no colour dot: deliverables are not people. */
+.chip-plain::before { display: none; }
+.chip-plain[aria-pressed='true'] {
+  border-color: var(--chair);
+  background: color-mix(in srgb, var(--chair) 10%, var(--surface));
+}
+
+.eyebrow { display: flex; align-items: baseline; gap: 8px; }
+
+/* ── It did not close ───────────────────────────────────────────────────── */
+.open-note {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  border-left: 2px solid var(--chair); padding: 8px 12px; margin-bottom: 10px;
+  background: color-mix(in srgb, var(--chair) 7%, var(--surface));
+  border-radius: 0 5px 5px 0;
+}
+.open-note p { margin: 0; font-size: 12.5px; line-height: 1.45; flex: 1; min-width: 220px; }
+.open-acts { display: flex; gap: 6px; }
+.af-warn {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .07em;
+  text-transform: uppercase; color: #b3261e;
+}
+@media (prefers-color-scheme: dark) { .af-warn { color: #f2857c; } }
+
+.orq-select {
+  padding: 4px 8px; border: 1px solid var(--chair); border-radius: 999px;
+  background: var(--surface); font-family: var(--font-mono); font-size: 11.5px;
+}
+
+.check select {
+  flex: 1; padding: 2px 5px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--ground); font-family: var(--font-mono); font-size: 10.5px;
+}
+
+/* ── Roundtables and their conversations ────────────────────────────────── */
+
+.masthead .sub.dim { color: var(--ink-3); }
+.masthead .sub.mono { font-family: var(--font-mono); }
+.dialog-body select {
+  width: 100%; padding: 9px 11px; border-radius: 6px;
+  border: 1px solid var(--rule); background: var(--ground); font-size: 13.5px;
+}
+.dialog-body .floor-picker select.orq-select { width: auto; padding: 4px 8px; }
+
+/* ── Project and language in the masthead ───────────────────────────────── */
+.proj-group { display: flex; align-items: center; gap: 6px; }
+.proj-switch {
+  border: 1px solid var(--rule); border-radius: 5px; background: var(--ground);
+  padding: 3px 7px; font-size: 12px; font-weight: 500; max-width: 190px;
+}
+
+/* Interface language. Deliberately quiet: you set it once and forget it. */
+.lang-switch {
+  border: 1px solid var(--rule); border-radius: 5px; background: var(--ground);
+  padding: 3px 6px; font-size: 11px; color: var(--ink-2);
+}
+
+/* ── Project management ─────────────────────────────────────────────────── */
+.proj-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 0; border-bottom: 1px solid var(--rule-soft);
+}
+.proj-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.proj-name { font-size: 13.5px; font-weight: 600; }
+.proj-active {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--chair); margin-left: 7px;
+  border: 1px solid var(--chair); border-radius: 3px; padding: 0 4px;
+}
+.proj-path {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.proj-meta { font-size: 10.5px; color: var(--ink-3); }
+
+.path-check { font-size: 11.5px; color: #0b7a6b; margin: 5px 0 0; line-height: 1.4; }
+.path-check.bad { color: #b3261e; }
+@media (prefers-color-scheme: dark) {
+  .path-check { color: #3fbfa8; }
+  .path-check.bad { color: #f2857c; }
+}
+/* Height comes from the `rows` attribute, which the browser sizes against the real line-height —
+   CSS `min-height` in em got it wrong by four lines. Sized for the frame's budget: one paragraph
+   of 300-400 characters, which wraps to ~4 lines at this width. */
+.frame-box { font-size: 13px; line-height: 1.55; margin-bottom: 8px; resize: vertical; }
+
+/* ── Step 2: what is proposed, what you changed, what is saved ──────────── */
+.reading-note, .pending-note {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 14px; padding: 8px 11px; border-radius: 6px; font-size: 12.5px;
+}
+.reading-note { background: var(--rule-soft); color: var(--ink-2); }
+.pending-note { background: var(--rule-soft); color: var(--ink); font-weight: 500; }
+.pending-note .btn { margin-left: auto; }
+/* A field whose value no longer matches what is on disk. */
+.changed {
+  margin-left: 7px; padding: 1px 6px; border-radius: 3px;
+  background: var(--chair); color: var(--surface);
+  font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+}
+label:has(.changed) { display: flex; align-items: center; }
+/* Locked while the model writes into them. */
+.dialog-body input:disabled, .dialog-body textarea:disabled, .dialog-body select:disabled {
+  opacity: .55; cursor: not-allowed;
+}
+
+.doom-list { margin: 0 0 14px; padding-left: 1.2em; font-size: 13px; line-height: 1.7; }
+.doom-warn {
+  border-left: 2px solid #b3261e; padding: 7px 11px; margin: 0 0 14px;
+  background: color-mix(in srgb, #b3261e 7%, var(--surface));
+  font-size: 13px; border-radius: 0 5px 5px 0;
+}
+@media (prefers-color-scheme: dark) { .doom-warn { border-left-color: #f2857c; } }
+
+.field-note.warn { color: var(--chair); }
+/* Actions on the conversation as a whole, above the sections. */
+.conv-acts { display: flex; gap: 6px; padding: 12px 16px; }
+/* A participant whose .md was deleted or renamed: the table remembers, the repo doesn't. */
+
+/* ── The bar: a mode, a play, a stop ──────────────────────────────────────
+   Everything else it used to carry was a combination of one of the modes with who is ticked in
+   the right column, so it moved there or went. */
+.mode-select { font-size: 12px; padding: 4px 8px; max-width: 15em; }
+
+/* A seat, as the picker shows it: their own heading first, because that is written to read as an
+   introduction, and the id last, because it is the least of what you need. */
+.seat-card {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  padding: 9px 11px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--surface); font: inherit;
+}
+.seat-card:hover { border-color: var(--ink-3); }
+.seat-card.picked { border-color: var(--ink); background: var(--rule-soft); }
+.seat-card-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+.seat-card-name { font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.seat-card-desc {
+  display: block; font-size: 12px; color: var(--ink-2); line-height: 1.45; margin-top: 3px;
+}
+.seat-card-meta {
+  display: block; font-family: var(--font-mono); font-size: 10px; color: var(--ink-3);
+  margin-top: 4px;
+}
+
+/* ── Back to the end ─────────────────────────────────────────────────────
+   The transcript won't drag you along if you scrolled up to read; this brings you back. */
+.to-bottom-wrap {
+  position: sticky; bottom: 10px; display: flex; justify-content: center;
+  pointer-events: none; height: 0;
+}
+.to-bottom {
+  pointer-events: auto; transform: translateY(-14px);
+  border: 1px solid var(--rule); border-radius: 999px; background: var(--surface);
+  box-shadow: var(--shadow); cursor: pointer;
+  padding: 6px 14px; font-size: 12px; font-weight: 500; color: var(--ink-2);
+}
+.to-bottom:hover { border-color: var(--chair); color: var(--ink); }
+
+/* ── Project folder picker ───────────────────────────────────────────────
+   Typing an absolute path still works; this is the path of least friction,
+   and the tag says which folders actually have agents to seat. */
+.browser {
+  margin-top: 8px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--surface-sunk); overflow: hidden;
+}
+.browser-head {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border-bottom: 1px solid var(--rule);
+}
+.browser-up {
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--surface);
+  width: 22px; height: 22px; flex: none; cursor: pointer; color: var(--ink-2);
+  line-height: 1;
+}
+.browser-up:disabled { opacity: .35; cursor: default; }
+/* rtl keeps the tail of a long path visible, which is the part that identifies it. */
+.browser-path {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  direction: rtl; text-align: left;
+}
+.browser-list { max-height: 190px; overflow-y: auto; background: var(--surface); }
+.browser-row {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 5px 9px; border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: 12.5px; text-align: left; color: var(--ink);
+}
+.browser-row:hover { background: var(--rule-soft); }
+.browser-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browser-badge {
+  flex: none; font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+  padding: 1px 5px; border-radius: 3px; background: var(--rule); color: var(--ink-2);
+}
+.browser-empty { padding: 9px; margin: 0; font-size: 12px; color: var(--ink-3); }
+
+/* ── Project setup flow ──────────────────────────────────────────────────
+   Four steps, and a step is only clickable once its prerequisites hold —
+   which is what makes the same screen linear when creating and free when
+   configuring. Disabled is the signal, so it has to read as disabled. */
+/* `width` on `dialog` wins over `max-width`, so this has to set width to take effect. Wider
+   also means fewer wrapped lines in the frame box below. */
+dialog.wide { width: min(760px, 94vw); }
+
+.steps { display: flex; gap: 4px; margin: 0 0 18px; flex-wrap: wrap; }
+.step {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 11px 5px 7px; border: 1px solid var(--rule); border-radius: 999px;
+  background: var(--surface); font: inherit; font-size: 12px; color: var(--ink-2);
+  cursor: pointer;
+}
+.step:hover:not(:disabled) { border-color: var(--ink-3); color: var(--ink); }
+.step[aria-current='true'] {
+  background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 600;
+}
+/* Not available reads as absent, not merely quiet: at rest a step has a border and dark-ish
+   text, so a plain opacity drop looked the same as "available but not current" — which got read
+   as disabled when it was not. */
+.step:disabled {
+  border-color: transparent; background: transparent; color: var(--ink-3);
+  opacity: .55; cursor: default;
+}
+.step:disabled .step-n { background: transparent; box-shadow: inset 0 0 0 1px var(--rule); }
+.step-n {
+  display: grid; place-items: center; width: 17px; height: 17px; flex: none;
+  border-radius: 50%; background: var(--rule-soft); color: var(--ink-2);
+  font-size: 10px; font-weight: 700;
+}
+.step[aria-current='true'] .step-n { background: rgba(255, 255, 255, .22); color: inherit; }
+
+/* ── Roles ─────────────────────────────────────────────────────────────── */
+.role-list { display: flex; flex-direction: column; gap: 5px; }
+.role-row {
+  display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left;
+  padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--surface); font: inherit; cursor: pointer;
+}
+.role-row.static { cursor: default; align-items: center; }
+.role-row:hover:not(.static) { border-color: var(--ink-3); }
+.role-row.picked { border-color: var(--ink); background: var(--rule-soft); }
+.role-id {
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); flex: none;
+  min-width: 148px;
+}
+.role-desc { font-size: 12px; color: var(--ink-2); flex: 1; }
+
+.role-result { margin-bottom: 10px; border: 1px solid var(--rule); border-radius: 6px; }
+.role-result-head {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.role-state { font-size: 11px; color: var(--ink-3); }
+.role-state.bad { color: #b4232a; }
+.role-body { padding: 4px 14px 12px; max-height: 320px; overflow-y: auto; }
+
+/* Mid-debounce: no verdict yet, and showing the previous folder's would be a lie. */
+.path-check.checking { color: var(--ink-3); }
+
+/* A folder with no CLAUDE.md: not selectable, but still a way through. Dimmed rather than
+   disabled, because clicking it does something — it walks in and searches again. */
+.browser-row.dim .browser-name { color: var(--ink-3); }
+.browser-row.dim:hover .browser-name { color: var(--ink-2); }
+.browser-lead { flex: none; color: var(--ink-3); font-size: 14px; line-height: 1; }
+
+/* ── Refresh with AI ────────────────────────────────────────────────────
+   Transversal: re-reads the source and refreshes whatever the step shows.
+   The cost lives in the tooltip — it is the same number every time, and
+   spelling it out turns a small control into a paragraph. */
+.dialog-head { display: flex; align-items: flex-start; gap: 12px; }
+.dialog-head h2 { flex: 1; }
+
+.ai-refresh {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  padding: 4px 9px; border: 1px solid var(--rule); border-radius: 999px;
+  background: var(--surface); color: var(--ink-2); cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .04em;
+}
+.ai-refresh:hover { border-color: var(--ink-3); color: var(--ink); }
+
+/* Working. Deliberately *more* visible than at rest, not less: greying it out
+   hid the one element saying something was happening. */
+.ai-refresh.busy {
+  border-color: var(--chair); color: var(--chair); cursor: default;
+}
+.ai-refresh.busy .ai-refresh-ico { animation: ai-spin 900ms linear infinite; }
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ai-refresh.busy .ai-refresh-ico { animation: none; }
+  .ai-refresh.busy { border-style: dashed; }
+}
+.ai-refresh-ico { transform-origin: 50% 50%; }
+
+/* Which archetype an existing agent fills — this is what explains why the list below is short. */
+.role-fills {
+  flex: none; font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 3px; background: var(--rule-soft); color: var(--ink-2);
+}
+
+/* ── People: one form, for adding and for editing ──────────────────────────
+   Inline rather than a dialog: this sits inside one already, and a second `<dialog>` in the top
+   layer is the bug recorded in CLAUDE.md. The role is the first field because it decides which
+   questions the rest of the form asks. */
+.persona-form {
+  border: 1px solid var(--ink-3); border-radius: 6px; background: var(--rule-soft);
+  margin-bottom: 14px;
+}
+.persona-form-head {
+  padding: 8px 10px; border-bottom: 1px solid var(--rule);
+  font-size: 12px; font-weight: 600; color: var(--ink);
+}
+/* Editing: the seat is not up for discussion, so it reads rather than selects. */
+.knob-fixed { flex: 1; font-size: 12px; color: var(--ink); }
+.knob-note { margin: -4px 0 2px 200px; }
+
+/* A person's own heading, which is the whole introduction. It is the row's primary text, so it
+   gets the body weight rather than the mono treatment an id gets. */
+.role-name { flex: 1; font-size: 12.5px; color: var(--ink); }
+
+.knobs {
+  display: flex; flex-direction: column; gap: 8px; padding: 2px 10px 10px;
+}
+.knob { display: flex; align-items: center; gap: 10px; }
+.knob > label {
+  flex: none; width: 190px; font-size: 11.5px; color: var(--ink-2);
+  /* Not the uppercase treatment field labels get: these sit inline, one per line, and shouting
+     nine of them in a row is unreadable. */
+  text-transform: none; letter-spacing: 0; font-weight: 500;
+}
+.knob select, .knob input { flex: 1; min-width: 0; }
+.knob-foot { display: flex; align-items: center; gap: 10px; padding-top: 2px; }
+.knob-foot .field-note { margin: 0; }
+
+/* A section label with an action on its right. The label keeps its own treatment; the button
+   sits beside what it acts on rather than up in the dialog head, because this one is about one
+   section and not about the screen. */
+.label-row { display: flex; align-items: center; gap: 10px; }
+
+/* What someone was made with. Read-only, and the same values a regeneration starts from. */
+.tuning { display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 10px 9px; }
+.tune-chip {
+  font-size: 10.5px; color: var(--ink-2); padding: 1px 7px;
+  border: 1px solid var(--rule); border-radius: 999px; background: var(--ground);
+}
+
+
+/* A small icon-only action. Square, quiet, and sized to sit beside a select without
+   competing with it. */
+.icon-btn {
+  display: inline-grid; place-items: center; flex: none;
+  width: 26px; height: 26px; padding: 0;
+  border: 1px solid var(--rule); border-radius: 5px;
+  background: var(--ground); color: var(--ink-2); cursor: pointer;
+  /* The masthead aligns on baseline, which an icon-only button does not have. */
+  align-self: center;
+}
+.icon-btn:hover { border-color: var(--ink-3); color: var(--ink); }
+
+/* Says the header's path is the choice, since navigating is what selects. */
+.browser-here {
+  flex: none; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  padding: 1px 5px; border-radius: 3px; background: var(--ink); color: var(--surface);
+}
+
+/* The rail is tighter than the masthead, so its gear is a size down. */
+.icon-btn-sm { width: 21px; height: 21px; border-radius: 4px; background: transparent; }
+
+
+/* ── Picking a conversation to delete ──────────────────────────────────────
+   A mode, entered from the bin in the heading, rather than an × per row. The rows say what they
+   have become: the whole list reads as dangerous while it is on, which is the point. */
+.icon-btn.on {
+  border-color: #b3261e; color: #b3261e; background: var(--surface);
+}
+.purge-note {
+  margin: 2px 0 6px; padding: 5px 9px; font-size: 11.5px;
+  color: #b3261e; background: rgba(179, 38, 30, .06); border-radius: 5px;
+}
+.room-item.purge .t { color: #b3261e; }
+.room-item.purge:hover { background: rgba(179, 38, 30, .09); }
+
+/* The open conversation's title is a field, not a label: renaming belongs where the name is
+   shown. Sized and weighted like the label it replaces, so the row does not jump. */
+.room-title {
+  width: 100%; padding: 0; border: 0; background: transparent;
+  font: inherit; font-weight: 500; font-size: 13px; color: inherit;
+}
+.room-title:focus {
+  outline: none; box-shadow: 0 1px 0 0 currentColor;
+}
+/* Its row is a div, not a button: no pointer, and no hover shift — it is already the current
+   one, so moving underneath the cursor would only look like it did something. */
+div.room-item { cursor: default; }
+div.room-item:hover { background: var(--surface-sunk); }
+
+/* The project exists from step 2 on, so say so. Without it the button's promise
+   sounds like it is about the end of the flow, and it is not. */
+.created-note {
+  margin: 0 0 16px; padding: 8px 11px; border-radius: 6px; font-size: 12.5px;
+  background: var(--rule-soft); color: var(--ink-2);
+  border-left: 2px solid var(--chair);
+}

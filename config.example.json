@@ -1,0 +1,11 @@
+{
+  "projects": [
+    {
+      "id": "my-product",
+      "name": "My Product",
+      "path": "/absolute/path/to/the/repo",
+      "locale": "en",
+      "frame": "One paragraph, 300-400 characters: what the product is, who buys or uses it, and what about its shape changes how decisions get argued (multi-tenant, sold through a channel, an internal tool, on-premise at a customer's site).\n\nYou do not write this by hand: the setup flow drafts it by reading the repo, and proposes the product name too. It deliberately leaves out architecture, paths and features — those are readable, and the protocol already tells every participant what a roundtable decides.\n\n`locale` is the language the agents are addressed in — match the language the personas in .claude/agents/ are written in. It is separate from the interface language, which each browser picks for itself."
+    }
+  ]
+}

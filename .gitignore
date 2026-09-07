@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.DS_Store
+
+# Roundtables and their transcripts are per-machine.
+data/
+data.backup-*/
+
+# Absolute paths from one machine. Copy config.example.json.
+config.json
+
+# Debug screenshots and scratch.
+debugagentesdev/
+*.log
+.env
+.env.*
+
+# tsc -b artifacts
+*.tsbuildinfo
