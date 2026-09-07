@@ -106,6 +106,15 @@ There briefly was one — generated personas were written into `<project>/.claud
 that machinery disappeared when the personas became global; if you find yourself reinventing the
 prefix, you are about to reintroduce the write path it existed to make safe.
 
+**Never track anything under `data/` in this repository, on any branch.** It was tried on one
+branch only — the profile pool, for an internal remote — and `git checkout main` then **deleted
+the live pool**, because git removes files the old branch tracked and the new one does not have.
+The app came up with nobody to seat. Ignoring a path on one branch and tracking it on another
+cannot be made safe.
+
+The pool is **its own repository**, at `data/personas/`, which this one ignores everywhere. A
+branch switch here cannot touch it, and the app reads the same path it always did.
+
 **Personas are global, not per project** (`data/personas/`, `personas.ts`). Two reasons, and the
 second is the one that matters:
 

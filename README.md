@@ -225,8 +225,9 @@ nombre»** invents one for whoever has none, in a single call, and keeps it in t
 prompt, so they answer to it. Anyone whose file already names them is left alone, and asking twice
 is free.
 
-The first two the app writes; both live in its own `data/personas/`. **Nothing is written into your
-repository** — the only thing the app ever puts there is a deliverable you publish.
+The first two the app writes; both live in its own `data/personas/`, which is outside your
+repository and outside this one — if you want a history of them, make that directory a git
+repository of its own and push it wherever you like. **Nothing is written into your repository** — the only thing the app ever puts there is a deliverable you publish.
 
 **«Add a person»** opens one form: who they work for, the role, and the knobs that role varies on.
 About $0.20 and a minute.
